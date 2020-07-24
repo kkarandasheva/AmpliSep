@@ -5,6 +5,7 @@ AmpliSep is a tool for dividing amplicon-based sequencing reads by pool based on
 split .bam by pools
 
 ## User Guide
+*The following information is relevant for AmpliSep v.1.0.1*
 ### Installation and Requirements
 You need to have your data aligned (.bam files).
 
