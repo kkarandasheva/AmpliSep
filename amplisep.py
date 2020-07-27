@@ -21,14 +21,20 @@ def parse_options():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--file',
                         help='input BAM file',
+                        required=True,
                         type=str)
     parser.add_argument('-o', '--outdir',
                         help='output directory',
                         default='',
+                        required=True,
                         type=str)
     parser.add_argument('-d', '--design',
                         help='design BED file',
+                        required=True,
                         type=str)
+    parser.add_argument("-c", "--coverage",
+                        help="print coverage",
+                        action="store_true")
     options = parser.parse_args()
     return options
 
@@ -56,7 +62,7 @@ def check_path(pathname, eh):
     Check that path exist
     """
     if not os.path.exists(pathname) or not os.path.isdir(pathname):
-        msg = "{0} not found\n".format(pathname)
+        msg = "{0} was not found. AmpliSeq cannot create new directories, you have to do this by youself.\n".format(pathname)
         eh(IOError(msg))
 
 
@@ -79,6 +85,7 @@ class Amplicon(object):
         self.length = int(ampl[2]) - int(ampl[1])
         self.length_fp = len(re.findall('ForwardPrimer=([ACGTacgt]+);', ampl[7])[0])
         self.length_rp = len(re.findall('ReversePrimer=([ACGTacgt]+)', ampl[7])[0])
+        self.coverage = int()
 
 
 def split_pools(design):
@@ -106,21 +113,23 @@ def get_range(strand, ampl):
 
 def check_read(read, ampl):
     global outbam
+    res = False
     read_range = get_range(read.is_reverse, ampl)
     if read.reference_name == ampl.chr and \
                     read.reference_start in read_range[0] and \
                     read.reference_end in read_range[1]:
-        #print 'write it!!!', ampl.chr, ampl.start
         outbam.write(read)
+        res = True
+    return res
 
 
-def main(fname, dsgn, outdir, errorhandler=err_hand_pipe):
+def main(fname, dsgn, outdir, coverstat, errorhandler=err_hand_pipe):
     global outbam
     # Check that both files exist
     check_file(fname, errorhandler)
     check_file(dsgn, errorhandler)
 
-    # Check that both files have right extension
+    # Check that both files have proper extension
     check_extension(fname, '.bam', errorhandler)
     check_extension(dsgn, '.bed', errorhandler)
 
@@ -139,6 +148,7 @@ def main(fname, dsgn, outdir, errorhandler=err_hand_pipe):
 
     inputbam = pysam.AlignmentFile(fname, "rb")
     nameshot = os.path.basename(os.path.splitext(fname)[0])
+
     pool_iter = 0
 
     for pool in pools:
@@ -147,16 +157,29 @@ def main(fname, dsgn, outdir, errorhandler=err_hand_pipe):
         pool_iter += 1
         outbam = pysam.AlignmentFile(outname, "wb", template=inputbam)
         for amp in pools[pool]:
+            read_iter = 0
             pileup = inputbam.fetch(region=amp.chr + ':' + str(amp.start) + '-' + str(amp.end))
             for read in pileup:
-                check_read(read, amp)
+                result = check_read(read, amp)
+                if result:
+                    read_iter += 1
+            amp.coverage = read_iter
         outbam.close()
     inputbam.close()
+
+    if coverstat:
+        statfile = open(outdir + nameshot + '.coverage.txt', 'w')
+        statfile.write("CHROM\tSTART\tEND\tNAME\tPOOL\tCOVERAGE\n")
+        for pool in pools:
+            for amp in pools[pool]:
+                statfile.write(amp.chr + '\t' + str(amp.start) + '\t' + str(amp.end) + '\t' + amp.name + '\t' + str(amp.pool) + '\t' + str(amp.coverage) + '\n')
+        statfile.close()
 
 if __name__ == '__main__':
     options = parse_options()
     main(fname=options.file,
          dsgn=options.design,
          outdir=options.outdir,
+         coverstat=options.coverage,
          errorhandler=err_hand_cmd)
     pass
