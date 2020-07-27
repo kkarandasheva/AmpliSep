@@ -17,6 +17,10 @@ You need to have your data aligned (.bam files).
 | <pre lang="console">-o, --outdir</pre> | DIR | Specifies the output directory name. If this is not specified, the<br> output will be written to the same folder where the input file is. |
 | <pre lang="console">-d, --design</pre> | FILE | Specifies the target regions file name. The input should be in<br> BED format. |
 
+| Flags  | Description |
+| :------- |:----------------------------|
+| <pre lang="console">-c, --coverage</pre> | Specifies to create txt file with target regions coverage information. |
+
 **Command line example**
 ```console
 foo@bar:~$ python amplisep.py -f test.bam -o /home/user/result/ -d design.bed
