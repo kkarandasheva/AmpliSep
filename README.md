@@ -24,3 +24,5 @@ amplisep.py [options]
 ```console
 foo@bar:~$ python amplisep.py -f test.bam -o /home/user/result/ -d design.bed
 ```
+## License
+AmpliSep is free for non-commercial use without warranty.
