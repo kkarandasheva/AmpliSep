@@ -6,6 +6,9 @@ split .bam by pools
 
 ## User Guide
 *The following information is relevant for AmpliSep v.1.0.1*
+### Synopsis
+amplisep.py [options]
+
 ### Installation and Requirements
 * You need to have your data aligned (.bam files).
 * AmpliSep uses ***pysam*** python module, so it must be preinstalled.
